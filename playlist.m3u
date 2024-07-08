@@ -1,0 +1,3 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="customchannel" tvg-name="Custom Channel" tvg-logo="http://example.com/logo.png" group-title="Custom Group",Custom Channel
+http://clubtv.link/04JUL/key4513/lista3.php?c=a00s&token=TECNOTVgeneradorPlay&f=.m3u8
