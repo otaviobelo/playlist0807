@@ -213,7 +213,7 @@
 
       const last = document.createElement('span');
       last.className = 'last-message';
-      const ultimo = data[nome].lancamentos.length > 0 ? data[nome].lancamentos[data[nome].lancamentos.length - 1] : null;
+      const ultimo = data[nome].lancamentos.at(-1);
       last.textContent = ultimo ? `${ultimo.date} - R$ ${ultimo.value.toFixed(2)}\n${ultimo.desc}` : 'Sem lançamentos';
 
       info.appendChild(label);
@@ -232,11 +232,9 @@
       const categoriasOrdenadas = Object.entries(data)
         .filter(([nome]) => nome !== 'SALDO')
         .sort((a, b) => {
-          const ultA = a[1].lancamentos.at(-1);
-          const ultB = b[1].lancamentos.at(-1);
-          const dataA = ultA ? new Date(ultA.date) : new Date(0);
-          const dataB = ultB ? new Date(ultB.date) : new Date(0);
-          return dataB - dataA;
+          const dataA = a[1].lancamentos.at(-1)?.date || '';
+          const dataB = b[1].lancamentos.at(-1)?.date || '';
+          return new Date(dataB) - new Date(dataA);
         });
 
       categoriasOrdenadas.forEach(([nome, info]) => {
@@ -305,11 +303,16 @@
         <option value="receita">Receita</option>
         <option value="despesa">Despesa</option>
       `;
-      document.body.appendChild(selectTipo);
       selectTipo.style.position = 'fixed';
       selectTipo.style.top = '20px';
       selectTipo.style.left = '20px';
-      selectTipo.size = 1;
+      selectTipo.style.padding = '10px';
+      selectTipo.style.borderRadius = '8px';
+      selectTipo.style.border = '1px solid #ccc';
+      selectTipo.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+      selectTipo.style.background = '#fff';
+      selectTipo.style.zIndex = 1000;
+      document.body.appendChild(selectTipo);
       selectTipo.focus();
 
       selectTipo.onchange = () => {
@@ -327,20 +330,28 @@
     function mostrarSaldo() {
       let totalReceita = 0;
       let totalDespesa = 0;
-      let detalhes = '';
+      let detalhesReceita = '';
+      let detalhesDespesa = '';
 
       for (const nome in data) {
         const cat = data[nome];
         const soma = cat.lancamentos.reduce((sum, l) => sum + l.value, 0);
-        if (cat.tipo === 'receita') totalReceita += soma;
-        else {
+        if (cat.tipo === 'receita') {
+          totalReceita += soma;
+          detalhesReceita += `${nome}: R$ ${soma.toFixed(2)}\n`;
+        } else {
           totalDespesa += soma;
-          detalhes += `${nome}: R$ ${soma.toFixed(2)}\n`;
+          detalhesDespesa += `${nome}: R$ ${soma.toFixed(2)}\n`;
         }
       }
 
       const div = document.getElementById('chat-messages');
-      div.innerText = `Total de Receitas: R$ ${totalReceita.toFixed(2)}\nTotal de Despesas: R$ ${totalDespesa.toFixed(2)}\n\nDetalhamento:\n${detalhes}\nSaldo: R$ ${(totalReceita - totalDespesa).toFixed(2)}`;
+      div.innerText = 
+        `Total de Receitas: R$ ${totalReceita.toFixed(2)}\n` +
+        `Total de Despesas: R$ ${totalDespesa.toFixed(2)}\n\n` +
+        `Receitas:\n${detalhesReceita || 'Nenhuma.'}\n` +
+        `Despesas:\n${detalhesDespesa || 'Nenhuma.'}\n` +
+        `\nSaldo: R$ ${(totalReceita - totalDespesa).toFixed(2)}`;
 
       document.getElementById('chat-header').innerText = 'SALDO';
       document.getElementById('total-categoria').innerText = '';
