@@ -60,6 +60,14 @@
       font-size: 18px;
       margin-right: 10px;
     }
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .last-message {
+      font-size: 12px;
+      color: #aebac1;
+    }
     .chat {
       flex: 1;
       display: flex;
@@ -84,21 +92,27 @@
     .message {
       max-width: 60%;
       align-self: flex-start;
-      background-color: #ffffff;
       padding: 10px 15px;
       border-radius: 7.5px;
       font-size: 14px;
       white-space: pre-wrap;
+    }
+    .message.receita {
+      background-color: #d4f8d4;
+    }
+    .message.despesa {
+      background-color: #ffd5d5;
     }
     .chat-input {
       display: flex;
       padding: 10px;
       background-color: #f0f0f0;
       border-top: 1px solid #ccc;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .chat-input input,
     .chat-input button {
-      margin-right: 10px;
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -145,25 +159,37 @@
   <script>
     let data = {};
     let categoriaAtual = null;
+    let tipoAtual = null;
 
     function formatarData(date) {
       return date.toISOString().split('T')[0];
     }
 
-    function criarBotaoCategoria(nome) {
+    function criarBotaoCategoria(nome, tipo) {
       const div = document.createElement('div');
       div.className = 'contact-item';
-      div.onclick = () => abrirCategoria(nome);
+      div.onclick = () => abrirCategoria(nome, tipo);
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
       avatar.textContent = nome.charAt(0);
 
+      const info = document.createElement('div');
+      info.className = 'contact-info';
+
       const label = document.createElement('span');
       label.textContent = nome;
 
+      const last = document.createElement('span');
+      last.className = 'last-message';
+      const ultimo = data[nome].length > 0 ? data[nome][data[nome].length - 1] : null;
+      last.textContent = ultimo ? `${ultimo.date} - R$ ${ultimo.value.toFixed(2)}` : 'Sem lançamentos';
+
+      info.appendChild(label);
+      info.appendChild(last);
+
       div.appendChild(avatar);
-      div.appendChild(label);
+      div.appendChild(info);
 
       return div;
     }
@@ -172,12 +198,13 @@
       const container = document.getElementById('categories-container');
       container.innerHTML = '';
       for (const nome in data) {
-        container.appendChild(criarBotaoCategoria(nome));
+        container.appendChild(criarBotaoCategoria(nome, data[nome].tipo));
       }
     }
 
-    function abrirCategoria(nome) {
+    function abrirCategoria(nome, tipo) {
       categoriaAtual = nome;
+      tipoAtual = tipo;
       document.getElementById('chat-header').innerText = nome;
       atualizarMensagens();
       document.querySelector('.chat').style.display = 'flex';
@@ -186,9 +213,9 @@
     function atualizarMensagens() {
       const div = document.getElementById('chat-messages');
       div.innerHTML = '';
-      data[categoriaAtual].forEach(l => {
+      data[categoriaAtual].lancamentos.forEach(l => {
         const msg = document.createElement('div');
-        msg.className = 'message';
+        msg.className = 'message ' + tipoAtual;
         msg.innerText = `${l.date} - R$ ${l.value.toFixed(2)}\n${l.desc}`;
         div.appendChild(msg);
       });
@@ -201,8 +228,9 @@
       const desc = document.getElementById('input-desc').value;
       if (isNaN(value) || !desc) return alert("Preencha todos os campos.");
       const lanc = { date, value, desc };
-      data[categoriaAtual].push(lanc);
+      data[categoriaAtual].lancamentos.push(lanc);
       atualizarMensagens();
+      carregarCategorias();
       document.getElementById('input-date').value = formatarData(new Date());
       document.getElementById('input-value').value = "";
       document.getElementById('input-desc').value = "";
@@ -212,15 +240,16 @@
       const nome = prompt("Nome da nova categoria:");
       if (!nome) return;
       if (data[nome]) return alert("Categoria já existe.");
-      data[nome] = [];
+      const tipo = prompt("Tipo da categoria (receita ou despesa):").toLowerCase();
+      if (tipo !== 'receita' && tipo !== 'despesa') return alert("Tipo inválido. Use 'receita' ou 'despesa'.");
+      data[nome] = { tipo, lancamentos: [] };
       carregarCategorias();
     }
 
-    // Inicializar com categorias fictícias
     data = {
-      "Alimentacão": [],
-      "Transporte": [],
-      "Salário": []
+      "Alimentação": { tipo: 'despesa', lancamentos: [] },
+      "Transporte": { tipo: 'despesa', lancamentos: [] },
+      "Salário": { tipo: 'receita', lancamentos: [] }
     };
     document.getElementById('input-date').value = formatarData(new Date());
     carregarCategorias();
