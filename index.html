@@ -132,6 +132,9 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
     .chat-messages {
@@ -174,6 +177,9 @@
       border-top: 1px solid #ccc;
       gap: 10px;
       flex-wrap: wrap;
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
     }
 
     .chat-input input,
@@ -199,11 +205,15 @@
       background: #f5f5f5;
       text-align: right;
       border-top: 1px solid #ccc;
+      position: sticky;
+      bottom: 60px;
+      background-color: #f0f2f5;
     }
 
     @media (max-width: 768px) {
       body {
         flex-direction: column;
+        height: 100%;
       }
       .sidebar {
         display: none;
@@ -211,19 +221,32 @@
       .contacts {
         width: 100%;
         height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
       .chat {
         display: none;
         width: 100%;
         height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
       .chat.mobile-chat-active {
         display: flex;
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: white;
-        z-index: 10;
+      }
+      
+      /* Ajustes para teclado mobile */
+      .chat-input {
+        padding-bottom: 20px;
+      }
+      .chat-input input {
+        font-size: 16px;
+        min-height: 44px;
+      }
+      .chat-input button {
+        min-height: 44px;
       }
     }
   </style>
@@ -244,7 +267,7 @@
   </div>
   <div class="chat" id="chat">
     <div class="chat-header" id="chat-header">
-      <span id="back-button" style="display:none; cursor:pointer;">🔙</span>
+      <span id="back-button" style="cursor:pointer;">🔙</span>
       <span id="chat-title">Selecione uma categoria</span>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
@@ -257,7 +280,25 @@
     </div>
   </div>
   <script>
-    let data = JSON.parse(localStorage.getItem('finData')) || {};
+    // Dados iniciais com categorias pré-definidas
+    let data = JSON.parse(localStorage.getItem('finData')) || {
+      "Salário": { tipo: "receita", lancamentos: [] },
+      "Investimentos": { tipo: "receita", lancamentos: [] },
+      "Freelance": { tipo: "receita", lancamentos: [] },
+      "Aluguel": { tipo: "receita", lancamentos: [] },
+      "Bônus": { tipo: "receita", lancamentos: [] },
+      "Moradia": { tipo: "despesa", lancamentos: [] },
+      "Alimentação": { tipo: "despesa", lancamentos: [] },
+      "Transporte": { tipo: "despesa", lancamentos: [] },
+      "Lazer": { tipo: "despesa", lancamentos: [] },
+      "Saúde": { tipo: "despesa", lancamentos: [] },
+      "Educação": { tipo: "despesa", lancamentos: [] },
+      "Vestuário": { tipo: "despesa", lancamentos: [] },
+      "Contas": { tipo: "despesa", lancamentos: [] },
+      "Supermercado": { tipo: "despesa", lancamentos: [] },
+      "Outros": { tipo: "despesa", lancamentos: [] }
+    };
+    
     let categoriaAtual = null;
     let tipoAtual = null;
 
@@ -301,9 +342,17 @@
     function carregarCategorias() {
       const container = document.getElementById('categories-container');
       container.innerHTML = '';
-      for (const nome in data) {
+      
+      // Ordenar categorias por tipo (receitas primeiro)
+      const categorias = Object.keys(data).sort((a, b) => {
+        if (data[a].tipo === 'receita' && data[b].tipo !== 'receita') return -1;
+        if (data[a].tipo !== 'receita' && data[b].tipo === 'receita') return 1;
+        return a.localeCompare(b);
+      });
+      
+      categorias.forEach(nome => {
         container.appendChild(criarBotaoCategoria(nome, data[nome].tipo));
-      }
+      });
     }
 
     const isMobile = () => window.innerWidth <= 768;
@@ -326,6 +375,13 @@
       }
 
       document.getElementById('chat-input').style.display = nome === 'SALDO' ? 'none' : 'flex';
+      
+      // Focar no primeiro campo do formulário em mobile
+      if (isMobile()) {
+        setTimeout(() => {
+          document.getElementById('input-date').focus();
+        }, 300);
+      }
     }
 
     function atualizarMensagens() {
@@ -353,6 +409,9 @@
         div.appendChild(msg);
       });
       document.getElementById('total-categoria').innerText = `Total: R$ ${total.toFixed(2)}`;
+      
+      // Rolagem automática para baixo
+      div.scrollTop = div.scrollHeight;
     }
 
     function addLancamento() {
@@ -369,6 +428,9 @@
       document.getElementById('input-date').value = formatarData(new Date());
       document.getElementById('input-value').value = "";
       document.getElementById('input-desc').value = "";
+      
+      // Focar no campo de valor após adicionar
+      document.getElementById('input-value').focus();
     }
 
     function novaCategoria() {
@@ -404,8 +466,21 @@
       }
     }
 
+    // Inicialização
     document.getElementById('input-date').value = formatarData(new Date());
+    document.getElementById('back-button').style.display = 'none';
     carregarCategorias();
+    
+    // Ajuste para teclado virtual em mobile
+    if (isMobile()) {
+      window.addEventListener('resize', function() {
+        if (document.activeElement.tagName === 'INPUT') {
+          setTimeout(() => {
+            document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
+      });
+    }
   </script>
 </body>
 </html>
