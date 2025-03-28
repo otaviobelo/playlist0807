@@ -96,12 +96,23 @@
       border-radius: 7.5px;
       font-size: 14px;
       white-space: pre-wrap;
+      position: relative;
     }
     .message.receita {
       background-color: #d4f8d4;
     }
     .message.despesa {
       background-color: #ffd5d5;
+    }
+    .message button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #555;
+      font-size: 12px;
     }
     .chat-input {
       display: flex;
@@ -182,7 +193,7 @@
 
       const last = document.createElement('span');
       last.className = 'last-message';
-      const ultimo = data[nome].length > 0 ? data[nome][data[nome].length - 1] : null;
+      const ultimo = data[nome].lancamentos.length > 0 ? data[nome].lancamentos[data[nome].lancamentos.length - 1] : null;
       last.textContent = ultimo ? `${ultimo.date} - R$ ${ultimo.value.toFixed(2)}` : 'Sem lançamentos';
 
       info.appendChild(label);
@@ -213,10 +224,22 @@
     function atualizarMensagens() {
       const div = document.getElementById('chat-messages');
       div.innerHTML = '';
-      data[categoriaAtual].lancamentos.forEach(l => {
+      data[categoriaAtual].lancamentos.forEach((l, i) => {
         const msg = document.createElement('div');
         msg.className = 'message ' + tipoAtual;
         msg.innerText = `${l.date} - R$ ${l.value.toFixed(2)}\n${l.desc}`;
+
+        const btn = document.createElement('button');
+        btn.innerHTML = '&times;';
+        btn.title = 'Excluir';
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          data[categoriaAtual].lancamentos.splice(i, 1);
+          atualizarMensagens();
+          carregarCategorias();
+        };
+
+        msg.appendChild(btn);
         div.appendChild(msg);
       });
     }
