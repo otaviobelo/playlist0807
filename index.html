@@ -2,364 +2,228 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Controle Financeiro WhatsApp</title>
+  <title>Controle Financeiro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    :root {
-      --whatsapp-green: #25D366;
-      --whatsapp-dark-green: #128C7E;
-      --whatsapp-light-green: #075E54;
-      --whatsapp-background: #e5ddd5;
-      --whatsapp-chat-background: #ECE5DD;
-    }
-    
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
     }
-    
     body {
-      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: var(--whatsapp-background);
-      height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e5ddd5;
       display: flex;
+      height: 100vh;
       overflow: hidden;
     }
-    
     .sidebar {
-      width: 400px;
-      background-color: white;
-      border-right: 1px solid #d1d7db;
+      width: 72px;
+      background-color: #111b21;
       display: flex;
       flex-direction: column;
-    }
-    
-    .sidebar-header {
-      background-color: var(--whatsapp-light-green);
-      color: white;
-      display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
+      padding: 10px 0;
     }
-    
-    .sidebar-header-icons {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    
-    .sidebar-header-icons .material-icons {
-      color: white;
+    .sidebar i {
+      color: #8696a0;
+      font-size: 20px;
+      margin: 20px 0;
       cursor: pointer;
     }
-    
-    .search-container {
-      background-color: #f6f6f6;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-    }
-    
-    .search-input {
-      flex: 1;
-      padding: 8px 12px;
-      border: none;
-      background-color: white;
-      border-radius: 20px;
-      margin-left: 10px;
-    }
-    
-    .contact-list {
-      flex: 1;
+    .contacts {
+      width: 320px;
+      background-color: #202c33;
+      color: white;
       overflow-y: auto;
-      background-color: white;
     }
-    
     .contact-item {
       display: flex;
       align-items: center;
-      padding: 15px;
-      border-bottom: 1px solid #f2f2f2;
+      padding: 10px;
+      border-bottom: 1px solid #2a3942;
       cursor: pointer;
-      transition: background-color 0.2s;
     }
-    
     .contact-item:hover {
-      background-color: #f5f5f5;
+      background-color: #2a3942;
     }
-    
-    .contact-avatar {
+    .avatar {
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background-color: var(--whatsapp-light-green);
-      color: white;
+      background-color: #ccc;
+      color: #111;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 15px;
       font-weight: bold;
+      font-size: 18px;
+      margin-right: 10px;
     }
-    
-    .contact-details {
+    .chat {
       flex: 1;
       display: flex;
       flex-direction: column;
     }
-    
-    .contact-name {
-      font-size: 16px;
-      margin-bottom: 5px;
-    }
-    
-    .contact-last-message {
-      color: #8a8a8a;
-      font-size: 14px;
-    }
-    
-    .contact-amount {
-      color: #8a8a8a;
-      font-size: 12px;
-    }
-    
-    .chat-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background-color: var(--whatsapp-chat-background);
-    }
-    
     .chat-header {
-      background-color: var(--whatsapp-dark-green);
+      background-color: #202c33;
       color: white;
+      padding: 15px;
       display: flex;
       align-items: center;
-      padding: 10px 16px;
+      border-left: 1px solid #2a3942;
     }
-    
-    .chat-header-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: white;
-      color: var(--whatsapp-light-green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 15px;
-      font-weight: bold;
-    }
-    
-    .chat-header-info {
-      flex: 1;
-    }
-    
-    .chat-header-icons {
-      display: flex;
-      gap: 20px;
-    }
-    
     .chat-messages {
       flex: 1;
-      overflow-y: auto;
       padding: 20px;
-      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmeBehJ6UiGJso+7pIj48ctQe7NqWd9TbzQ3rOPNiSMXTJUmRjPKU3pS0FkQkopf0kckVmysqKpERTSUY1TGl9m7CNNp2BMNc3rTlWMzFqmM4c4vii2pMtDvhqyRmUF7vzcUmk5AXzjl4LQcHxnOGCDYOkLPUDttaPXY/wCI7qvWbdWIQDHXMJEAMiEtyaXOah5pSPuGMjTCNj4RNTCrloEKQA2TRlOGh8lMmc2vRgJzV0UVbmxJcRTkmJmY+2iJxMW2FKlRMtXH0J1EWuIETnYkrNzJxEVMGIxNQGQwTCaEg+uZlmOEwLfRWAK/CL6mvQKgyxWuMRZdFNk7FGH+eeNxlOXrpTU5VT+hNSBSzAeTOUeQtDp8Ag4eUewvkOd9eDOHpezQBfPSIqiX6P6DQDgcN3+PmJ4NrMYPGD4ezrL7DmLEETDMRw7pZDHPQGAjaWQWBIzRh8AAAAwCUQHWAAAMBoYCADIAAAAAQAA4CAAAAgABAAMAAYABAAGAAQABQAGAAAAAQAEAAAAAQAFAAAAAQAAAAACAAEABAAGAPwDBAAKABQADgAYABwAIAArACwALQA0AAAAAAEAAgAeAAEAAQAuADMABAAhAAEAAgAhABwAHgAhABwABAAeABQAIQAuABwABAAhABQAAAADAAAAAQAGAAAABAABAAEABQAEAAEACgABAAQACwAKAAQACwAEAAEABAABAAUABAABAAIABQAEAAEABAAGAAAAAQAGAAAABAABAAEABQAEAAEACgABAAQACwAKAAQACwAEAAEABAABAAUABAABAAIABQAEAAEABAAGAAAAAQAGAAAABAABAAEABQAEAAEACgABAAQACwAKAAQACwAEAAEABAABAAUABAABAAIABQAEAAEABAAGAAAAAQAGAAAABAABAAEABQAEAAEACgABAAQACwAKAAQACwAEAAEABAABAAUABAABAAIABQAEAAEABAAGAAAA');
-    }
-    
-    .chat-message {
-      max-width: 80%;
-      background-color: white;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 7px;
-      box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-    }
-    
-    .chat-input {
-      background-color: #f0f0f0;
-      padding: 10px;
+      overflow-y: auto;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 10px;
     }
-    
+    .message {
+      max-width: 60%;
+      align-self: flex-start;
+      background-color: #ffffff;
+      padding: 10px 15px;
+      border-radius: 7.5px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input input,
+    .chat-input button {
+      margin-right: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
     .chat-input input {
       flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 20px;
     }
-    
     .chat-input button {
-      background-color: var(--whatsapp-green);
+      background-color: #25D366;
       color: white;
       border: none;
-      border-radius: 50%;
-      width: 45px;
-      height: 45px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-weight: bold;
       cursor: pointer;
     }
-    
-    .new-category-button {
-      background-color: var(--whatsapp-green);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      cursor: pointer;
-      z-index: 1000;
-    }
-    
     @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-      
       .sidebar {
-        width: 100%;
-        position: absolute;
-        z-index: 10;
+        display: none;
       }
-      
-      .chat-container {
-        position: absolute;
+      .contacts {
         width: 100%;
-        z-index: 5;
+      }
+      .chat {
+        display: none;
       }
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-header-info">
-        <h2>Controle Financeiro</h2>
-      </div>
-      <div class="sidebar-header-icons">
-        <span class="material-icons">status_online</span>
-        <span class="material-icons">chat</span>
-        <span class="material-icons">more_vert</span>
-      </div>
-    </div>
-    
-    <div class="search-container">
-      <input type="text" class="search-input" placeholder="Pesquisar categorias" id="search-input">
-    </div>
-    
-    <div class="contact-list" id="category-list">
-      <!-- Categorias serão adicionadas aqui dinamicamente -->
-    </div>
+    <i class="fas fa-user-plus" onclick="novaCategoria()" title="Nova Categoria"></i>
   </div>
-  
-  <div class="chat-container">
-    <div class="chat-header">
-      <div class="chat-header-avatar" id="current-category-avatar">
-        C
-      </div>
-      <div class="chat-header-info">
-        <div id="current-category-name">Selecione uma categoria</div>
-        <div id="category-total-amount">Valor total</div>
-      </div>
-      <div class="chat-header-icons">
-        <span class="material-icons">search</span>
-        <span class="material-icons">attach_file</span>
-        <span class="material-icons">more_vert</span>
-      </div>
-    </div>
-    
-    <div class="chat-messages" id="chat-messages">
-      <!-- Mensagens serão adicionadas aqui dinamicamente -->
-    </div>
-    
+  <div class="contacts" id="categories-container"></div>
+  <div class="chat">
+    <div class="chat-header" id="chat-header">Selecione uma categoria</div>
+    <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-input">
-      <input type="text" id="input-desc" placeholder="Descrição">
+      <input type="date" id="input-date">
       <input type="number" id="input-value" placeholder="Valor">
-      <button onclick="addLancamento()">
-        <span class="material-icons">send</span>
-      </button>
+      <input type="text" id="input-desc" placeholder="Descrição">
+      <button onclick="addLancamento()">Enviar</button>
     </div>
   </div>
-  
-  <button class="new-category-button" onclick="adicionarNovaCategoria()">
-    <span class="material-icons">add</span>
-  </button>
 
   <script>
-    // [O script anterior seria mantido aqui com algumas modificações]
-    // Modificações principais:
-    // 1. Substituir criação de botões de categoria
-    // 2. Adicionar função adicionarNovaCategoria()
-    // 3. Ajustar as funções existentes para o novo layout
-
-    const categorias = {
-      despesas: ["Alimentação", "Transporte", "Moradia", "Educação", "Saúde", "Lazer", "Roupas", "Pets", "Assinaturas", "Viagem", "Compras", "Impostos", "Serviços", "Doações", "Outros"],
-      receitas: ["Salário", "Freelance", "Investimentos", "Vendas", "Reembolso", "Outros"]
-    };
-
     let data = {};
     let categoriaAtual = null;
-    let tipoAtual = null;
 
-    function adicionarNovaCategoria() {
-      const nome = prompt("Digite o nome da nova categoria:");
-      if (nome) {
-        const tipo = confirm("É uma categoria de receita? (Cancelar para despesa)") ? 'receita' : 'despesa';
-        if (tipo === 'receita') {
-          categorias.receitas.push(nome);
-        } else {
-          categorias.despesas.push(nome);
-        }
-        data[nome] = [];
-        criarBotaoCategoria(nome, tipo);
+    function formatarData(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    function criarBotaoCategoria(nome) {
+      const div = document.createElement('div');
+      div.className = 'contact-item';
+      div.onclick = () => abrirCategoria(nome);
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = nome.charAt(0);
+
+      const label = document.createElement('span');
+      label.textContent = nome;
+
+      div.appendChild(avatar);
+      div.appendChild(label);
+
+      return div;
+    }
+
+    function carregarCategorias() {
+      const container = document.getElementById('categories-container');
+      container.innerHTML = '';
+      for (const nome in data) {
+        container.appendChild(criarBotaoCategoria(nome));
       }
     }
 
-    function criarBotaoCategoria(cat, tipo) {
-      const categoriaContainer = document.getElementById('category-list');
-      const div = document.createElement('div');
-      div.className = 'contact-item';
-      div.onclick = () => abrirCategoria(cat, tipo);
-
-      const avatar = document.createElement('div');
-      avatar.className = 'contact-avatar';
-      avatar.textContent = cat.charAt(0);
-
-      const details = document.createElement('div');
-      details.className = 'contact-details';
-
-      const nome = document.createElement('div');
-      nome.className = 'contact-name';
-      nome.textContent = cat;
-
-      const total = document.createElement('div');
-      total.className = `contact-last-message contact-amount ${tipo}`;
-      total.id = `total-${cat}`;
-      total.textContent = 'R$ 0,00';
-
-      details.appendChild(nome);
-      details.appendChild(total);
-
-      div.appendChild(avatar);
-      div.appendChild(details);
-
-      categoriaContainer.appendChild(div);
+    function abrirCategoria(nome) {
+      categoriaAtual = nome;
+      document.getElementById('chat-header').innerText = nome;
+      atualizarMensagens();
+      document.querySelector('.chat').style.display = 'flex';
     }
 
-    // [Resto do script anterior com ajustes menores]
+    function atualizarMensagens() {
+      const div = document.getElementById('chat-messages');
+      div.innerHTML = '';
+      data[categoriaAtual].forEach(l => {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.innerText = `${l.date} - R$ ${l.value.toFixed(2)}\n${l.desc}`;
+        div.appendChild(msg);
+      });
+    }
+
+    function addLancamento() {
+      if (!categoriaAtual) return alert("Selecione uma categoria.");
+      const date = document.getElementById('input-date').value || formatarData(new Date());
+      const value = parseFloat(document.getElementById('input-value').value);
+      const desc = document.getElementById('input-desc').value;
+      if (isNaN(value) || !desc) return alert("Preencha todos os campos.");
+      const lanc = { date, value, desc };
+      data[categoriaAtual].push(lanc);
+      atualizarMensagens();
+      document.getElementById('input-date').value = formatarData(new Date());
+      document.getElementById('input-value').value = "";
+      document.getElementById('input-desc').value = "";
+    }
+
+    function novaCategoria() {
+      const nome = prompt("Nome da nova categoria:");
+      if (!nome) return;
+      if (data[nome]) return alert("Categoria já existe.");
+      data[nome] = [];
+      carregarCategorias();
+    }
+
+    // Inicializar com categorias fictícias
+    data = {
+      "Alimentacão": [],
+      "Transporte": [],
+      "Salário": []
+    };
+    document.getElementById('input-date').value = formatarData(new Date());
+    carregarCategorias();
   </script>
 </body>
 </html>
