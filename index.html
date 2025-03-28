@@ -65,6 +65,20 @@
       margin-right: 10px;
     }
 
+    .nova-categoria-btn {
+      padding: 12px;
+      background-color: #2a3942;
+      color: #25D366;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      border-bottom: 1px solid #3b4a54;
+    }
+
+    .nova-categoria-btn:hover {
+      background-color: #36454f;
+    }
+
     .contact-item {
       display: flex;
       align-items: center;
@@ -187,12 +201,13 @@
       border-top: 1px solid #ccc;
     }
 
-    /* Mobile Styling */
     @media (max-width: 768px) {
       body {
         flex-direction: column;
       }
-      .sidebar { display: none; }
+      .sidebar {
+        display: none;
+      }
       .contacts {
         width: 100%;
         height: 100%;
@@ -222,6 +237,9 @@
       <div class="saldo-avatar">S</div>
       SALDO
     </div>
+    <div class="nova-categoria-btn" onclick="novaCategoria()">
+      <i class="fas fa-plus-circle"></i> Nova Categoria
+    </div>
     <div id="categories-container"></div>
   </div>
   <div class="chat" id="chat">
@@ -238,7 +256,6 @@
       <button onclick="addLancamento()">Enviar</button>
     </div>
   </div>
-
   <script>
     let data = JSON.parse(localStorage.getItem('finData')) || {};
     let categoriaAtual = null;
@@ -259,7 +276,7 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar ' + tipo;
-      avatar.textContent = nome.charAt(0);
+      avatar.textContent = nome.charAt(0).toUpperCase();
 
       const info = document.createElement('div');
       info.className = 'contact-info';
