@@ -15,6 +15,7 @@
       height: 100vh;
       overflow: hidden;
     }
+
     .sidebar {
       width: 72px;
       background-color: #111b21;
@@ -23,12 +24,14 @@
       align-items: center;
       padding: 10px 0;
     }
+
     .sidebar i {
       color: #8696a0;
       font-size: 20px;
       margin: 20px 0;
       cursor: pointer;
     }
+
     .contacts {
       width: 320px;
       background-color: #202c33;
@@ -37,6 +40,7 @@
       display: flex;
       flex-direction: column;
     }
+
     .saldo-item {
       display: flex;
       align-items: center;
@@ -44,7 +48,9 @@
       cursor: pointer;
       border-bottom: 2px solid #8696a0;
       font-weight: bold;
+      background-color: #111b21;
     }
+
     .saldo-avatar {
       width: 50px;
       height: 50px;
@@ -58,6 +64,7 @@
       font-size: 18px;
       margin-right: 10px;
     }
+
     .contact-item {
       display: flex;
       align-items: center;
@@ -65,9 +72,11 @@
       border-bottom: 1px solid #2a3942;
       cursor: pointer;
     }
+
     .contact-item:hover {
       background-color: #2a3942;
     }
+
     .avatar {
       width: 50px;
       height: 50px;
@@ -80,23 +89,37 @@
       font-size: 18px;
       margin-right: 10px;
     }
+
     .avatar.receita { background-color: green; }
     .avatar.despesa { background-color: red; }
-    .contact-info { display: flex; flex-direction: column; }
-    .last-message { font-size: 12px; color: #aebac1; white-space: pre-wrap; }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .last-message {
+      font-size: 12px;
+      color: #aebac1;
+      white-space: pre-wrap;
+    }
+
     .chat {
       flex: 1;
       display: flex;
       flex-direction: column;
+      background-color: #f0f2f5;
     }
+
     .chat-header {
       background-color: #202c33;
       color: white;
       padding: 15px;
       display: flex;
       align-items: center;
-      border-left: 1px solid #2a3942;
+      gap: 10px;
     }
+
     .chat-messages {
       flex: 1;
       padding: 20px;
@@ -105,8 +128,9 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .message {
-      max-width: 60%;
+      max-width: 70%;
       align-self: flex-start;
       padding: 10px 15px;
       border-radius: 7.5px;
@@ -114,8 +138,10 @@
       white-space: pre-wrap;
       position: relative;
     }
-    .message.receita { background-color: #d4f8d4; }
-    .message.despesa { background-color: #ffd5d5; }
+
+    .message.receita { background-color: #dcf8c6; align-self: flex-end; }
+    .message.despesa { background-color: #fff; border: 1px solid #ddd; }
+
     .message button {
       position: absolute;
       top: 5px;
@@ -126,6 +152,7 @@
       color: #555;
       font-size: 12px;
     }
+
     .chat-input {
       display: flex;
       padding: 10px;
@@ -134,13 +161,16 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
     .chat-input input,
     .chat-input button {
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
+
     .chat-input input { flex: 1; }
+
     .chat-input button {
       background-color: #25D366;
       color: white;
@@ -148,6 +178,7 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     .total-display {
       padding: 10px;
       font-weight: bold;
@@ -155,10 +186,30 @@
       text-align: right;
       border-top: 1px solid #ccc;
     }
+
+    /* Mobile Styling */
     @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
       .sidebar { display: none; }
-      .contacts { width: 100%; }
-      .chat { display: none; }
+      .contacts {
+        width: 100%;
+        height: 100%;
+      }
+      .chat {
+        display: none;
+        width: 100%;
+        height: 100%;
+      }
+      .chat.mobile-chat-active {
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: white;
+        z-index: 10;
+      }
     }
   </style>
 </head>
@@ -173,8 +224,11 @@
     </div>
     <div id="categories-container"></div>
   </div>
-  <div class="chat">
-    <div class="chat-header" id="chat-header">Selecione uma categoria</div>
+  <div class="chat" id="chat">
+    <div class="chat-header" id="chat-header">
+      <span id="back-button" style="display:none; cursor:pointer;">🔙</span>
+      <span id="chat-title">Selecione uma categoria</span>
+    </div>
     <div class="chat-messages" id="chat-messages"></div>
     <div class="total-display" id="total-categoria"></div>
     <div class="chat-input" id="chat-input">
@@ -184,6 +238,7 @@
       <button onclick="addLancamento()">Enviar</button>
     </div>
   </div>
+
   <script>
     let data = JSON.parse(localStorage.getItem('finData')) || {};
     let categoriaAtual = null;
@@ -234,12 +289,25 @@
       }
     }
 
+    const isMobile = () => window.innerWidth <= 768;
+
+    document.getElementById('back-button').addEventListener('click', () => {
+      document.getElementById('chat').classList.remove('mobile-chat-active');
+    });
+
     function abrirCategoria(nome, tipo) {
       categoriaAtual = nome;
       tipoAtual = tipo;
-      document.getElementById('chat-header').innerText = nome;
+      document.getElementById('chat-title').innerText = nome;
       atualizarMensagens();
-      document.querySelector('.chat').style.display = 'flex';
+      const chat = document.getElementById('chat');
+      chat.style.display = 'flex';
+
+      if (isMobile()) {
+        chat.classList.add('mobile-chat-active');
+        document.getElementById('back-button').style.display = 'inline';
+      }
+
       document.getElementById('chat-input').style.display = nome === 'SALDO' ? 'none' : 'flex';
     }
 
@@ -308,10 +376,15 @@
       }
       const div = document.getElementById('chat-messages');
       div.innerHTML = `Total de Receitas: R$ ${totalReceita.toFixed(2)}\nTotal de Despesas: R$ ${totalDespesa.toFixed(2)}\nSaldo: R$ ${(totalReceita - totalDespesa).toFixed(2)}`;
-      document.getElementById('chat-header').innerText = 'SALDO';
+      document.getElementById('chat-title').innerText = 'SALDO';
       document.getElementById('total-categoria').innerText = '';
-      document.querySelector('.chat').style.display = 'flex';
+      const chat = document.getElementById('chat');
+      chat.style.display = 'flex';
       document.getElementById('chat-input').style.display = 'none';
+      if (isMobile()) {
+        chat.classList.add('mobile-chat-active');
+        document.getElementById('back-button').style.display = 'inline';
+      }
     }
 
     document.getElementById('input-date').value = formatarData(new Date());
