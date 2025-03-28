@@ -38,11 +38,25 @@
       flex-direction: column;
     }
     .saldo-item {
-      background-color: #2a3942;
-      padding: 15px;
+      display: flex;
+      align-items: center;
+      padding: 10px;
       cursor: pointer;
       border-bottom: 2px solid #8696a0;
       font-weight: bold;
+    }
+    .saldo-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #ccc;
+      color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      margin-right: 10px;
     }
     .contact-item {
       display: flex;
@@ -58,8 +72,7 @@
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background-color: #ccc;
-      color: #111;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -67,6 +80,8 @@
       font-size: 18px;
       margin-right: 10px;
     }
+    .avatar.receita { background-color: green; }
+    .avatar.despesa { background-color: red; }
     .contact-info { display: flex; flex-direction: column; }
     .last-message { font-size: 12px; color: #aebac1; white-space: pre-wrap; }
     .chat {
@@ -152,14 +167,17 @@
     <i class="fas fa-user-plus" onclick="novaCategoria()" title="Nova Categoria"></i>
   </div>
   <div class="contacts">
-    <div class="saldo-item" onclick="mostrarSaldo()">SALDO</div>
+    <div class="saldo-item" onclick="mostrarSaldo()">
+      <div class="saldo-avatar">S</div>
+      SALDO
+    </div>
     <div id="categories-container"></div>
   </div>
   <div class="chat">
     <div class="chat-header" id="chat-header">Selecione uma categoria</div>
     <div class="chat-messages" id="chat-messages"></div>
     <div class="total-display" id="total-categoria"></div>
-    <div class="chat-input">
+    <div class="chat-input" id="chat-input">
       <input type="date" id="input-date">
       <input type="number" id="input-value" placeholder="Valor">
       <input type="text" id="input-desc" placeholder="Descrição">
@@ -185,7 +203,7 @@
       div.onclick = () => abrirCategoria(nome, tipo);
 
       const avatar = document.createElement('div');
-      avatar.className = 'avatar';
+      avatar.className = 'avatar ' + tipo;
       avatar.textContent = nome.charAt(0);
 
       const info = document.createElement('div');
@@ -222,6 +240,7 @@
       document.getElementById('chat-header').innerText = nome;
       atualizarMensagens();
       document.querySelector('.chat').style.display = 'flex';
+      document.getElementById('chat-input').style.display = nome === 'SALDO' ? 'none' : 'flex';
     }
 
     function atualizarMensagens() {
@@ -252,7 +271,7 @@
     }
 
     function addLancamento() {
-      if (!categoriaAtual) return alert("Selecione uma categoria.");
+      if (!categoriaAtual || categoriaAtual === 'SALDO') return alert("Selecione uma categoria válida.");
       const date = document.getElementById('input-date').value || formatarData(new Date());
       const value = parseFloat(document.getElementById('input-value').value);
       const desc = document.getElementById('input-desc').value;
@@ -268,8 +287,8 @@
     }
 
     function novaCategoria() {
-      const tipo = prompt("Tipo da categoria (receita ou despesa):").toLowerCase();
-      if (tipo !== 'receita' && tipo !== 'despesa') return alert("Tipo inválido. Use 'receita' ou 'despesa'.");
+      const tipo = prompt("Escolha o tipo: receita ou despesa").toLowerCase();
+      if (tipo !== 'receita' && tipo !== 'despesa') return alert("Tipo inválido.");
       const nome = prompt("Nome da nova categoria:");
       if (!nome) return;
       if (data[nome]) return alert("Categoria já existe.");
@@ -292,6 +311,7 @@
       document.getElementById('chat-header').innerText = 'SALDO';
       document.getElementById('total-categoria').innerText = '';
       document.querySelector('.chat').style.display = 'flex';
+      document.getElementById('chat-input').style.display = 'none';
     }
 
     document.getElementById('input-date').value = formatarData(new Date());
