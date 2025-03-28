@@ -65,9 +65,7 @@
       border-bottom: 1px solid #2a3942;
       cursor: pointer;
     }
-    .contact-item:hover {
-      background-color: #2a3942;
-    }
+    .contact-item:hover { background-color: #2a3942; }
     .avatar {
       width: 50px;
       height: 50px;
@@ -104,6 +102,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      white-space: pre-wrap;
     }
     .message {
       max-width: 60%;
@@ -111,7 +110,6 @@
       padding: 10px 15px;
       border-radius: 7.5px;
       font-size: 14px;
-      white-space: pre-wrap;
       position: relative;
     }
     .message.receita { background-color: #d4f8d4; }
@@ -184,6 +182,7 @@
       <button onclick="addLancamento()">Enviar</button>
     </div>
   </div>
+
   <script>
     let data = JSON.parse(localStorage.getItem('finData')) || {};
     let categoriaAtual = null;
@@ -229,9 +228,20 @@
     function carregarCategorias() {
       const container = document.getElementById('categories-container');
       container.innerHTML = '';
-      for (const nome in data) {
-        container.appendChild(criarBotaoCategoria(nome, data[nome].tipo));
-      }
+
+      const categoriasOrdenadas = Object.entries(data)
+        .filter(([nome]) => nome !== 'SALDO')
+        .sort((a, b) => {
+          const ultA = a[1].lancamentos.at(-1);
+          const ultB = b[1].lancamentos.at(-1);
+          const dataA = ultA ? new Date(ultA.date) : new Date(0);
+          const dataB = ultB ? new Date(ultB.date) : new Date(0);
+          return dataB - dataA;
+        });
+
+      categoriasOrdenadas.forEach(([nome, info]) => {
+        container.appendChild(criarBotaoCategoria(nome, info.tipo));
+      });
     }
 
     function abrirCategoria(nome, tipo) {
@@ -247,6 +257,7 @@
       const div = document.getElementById('chat-messages');
       div.innerHTML = '';
       let total = 0;
+
       data[categoriaAtual].lancamentos.forEach((l, i) => {
         total += l.value;
         const msg = document.createElement('div');
@@ -267,6 +278,7 @@
         msg.appendChild(btn);
         div.appendChild(msg);
       });
+
       document.getElementById('total-categoria').innerText = `Total: R$ ${total.toFixed(2)}`;
     }
 
@@ -287,27 +299,49 @@
     }
 
     function novaCategoria() {
-      const tipo = prompt("Escolha o tipo: receita ou despesa").toLowerCase();
-      if (tipo !== 'receita' && tipo !== 'despesa') return alert("Tipo inválido.");
-      const nome = prompt("Nome da nova categoria:");
-      if (!nome) return;
-      if (data[nome]) return alert("Categoria já existe.");
-      data[nome] = { tipo, lancamentos: [] };
-      salvarDados();
-      carregarCategorias();
+      const selectTipo = document.createElement('select');
+      selectTipo.innerHTML = `
+        <option value="">Tipo</option>
+        <option value="receita">Receita</option>
+        <option value="despesa">Despesa</option>
+      `;
+      document.body.appendChild(selectTipo);
+      selectTipo.style.position = 'fixed';
+      selectTipo.style.top = '20px';
+      selectTipo.style.left = '20px';
+      selectTipo.size = 1;
+      selectTipo.focus();
+
+      selectTipo.onchange = () => {
+        const tipo = selectTipo.value;
+        document.body.removeChild(selectTipo);
+        const nome = prompt("Nome da nova categoria:");
+        if (!nome) return;
+        if (data[nome]) return alert("Categoria já existe.");
+        data[nome] = { tipo, lancamentos: [] };
+        salvarDados();
+        carregarCategorias();
+      };
     }
 
     function mostrarSaldo() {
       let totalReceita = 0;
       let totalDespesa = 0;
+      let detalhes = '';
+
       for (const nome in data) {
         const cat = data[nome];
         const soma = cat.lancamentos.reduce((sum, l) => sum + l.value, 0);
         if (cat.tipo === 'receita') totalReceita += soma;
-        else totalDespesa += soma;
+        else {
+          totalDespesa += soma;
+          detalhes += `${nome}: R$ ${soma.toFixed(2)}\n`;
+        }
       }
+
       const div = document.getElementById('chat-messages');
-      div.innerHTML = `Total de Receitas: R$ ${totalReceita.toFixed(2)}\nTotal de Despesas: R$ ${totalDespesa.toFixed(2)}\nSaldo: R$ ${(totalReceita - totalDespesa).toFixed(2)}`;
+      div.innerText = `Total de Receitas: R$ ${totalReceita.toFixed(2)}\nTotal de Despesas: R$ ${totalDespesa.toFixed(2)}\n\nDetalhamento:\n${detalhes}\nSaldo: R$ ${(totalReceita - totalDespesa).toFixed(2)}`;
+
       document.getElementById('chat-header').innerText = 'SALDO';
       document.getElementById('total-categoria').innerText = '';
       document.querySelector('.chat').style.display = 'flex';
