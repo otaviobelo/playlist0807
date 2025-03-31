@@ -33,8 +33,8 @@
     .saldo   { background-color: #2196F3; }
 
     .categoria-card {
-      background-color: #444;
-      color: white;
+      background-color: #e0e0e0;
+      color: #333;
       padding: 12px 16px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -48,7 +48,7 @@
 
     .categoria-card .receita,
     .categoria-card .despesa {
-      color: white;
+      color: #333;
     }
 
     table {
@@ -81,13 +81,16 @@
   <h1>Leitor de CSV</h1>
   <input type="file" id="csvFile" accept=".csv" />
 
-  <!-- Filtro por período -->
+  <!-- Filtros -->
   <div style="margin: 20px 0;">
     <label for="dataInicio">De: </label>
     <input type="date" id="dataInicio" />
 
     <label for="dataFim">Até: </label>
     <input type="date" id="dataFim" />
+
+    <label for="filtroTexto">Contém a palavra: </label>
+    <input type="text" id="filtroTexto" placeholder="Ex: pix, gasolina, mercado" />
 
     <button id="btnFiltrar">Filtrar</button>
   </div>
@@ -162,17 +165,23 @@
       }).format(valor);
     }
 
-    function filtrarPorData(data) {
+    function filtrarDados(data) {
       const inicio = document.getElementById('dataInicio').value;
       const fim = document.getElementById('dataFim').value;
+      const texto = document.getElementById('filtroTexto').value.toLowerCase();
 
-      if (!inicio && !fim) return data;
+      if (!inicio && !fim && !texto) return data;
 
       return data.filter((row, i) => {
         if (i < 2 || i === data.length - 1) return true;
+
         const dataLancamento = row[0]?.split(' ')[0]?.split('/').reverse().join('-');
+        const historico = (row[2] || '').toLowerCase();
+
         if (inicio && dataLancamento < inicio) return false;
         if (fim && dataLancamento > fim) return false;
+        if (texto && !historico.includes(texto)) return false;
+
         return true;
       });
     }
@@ -191,7 +200,7 @@
         );
 
         dadosCSV = rows;
-        const filtrados = filtrarPorData(dadosCSV);
+        const filtrados = filtrarDados(dadosCSV);
         renderTotaisGerais(filtrados);
         renderResumoPorCategoria(filtrados);
         renderTable(filtrados);
@@ -200,7 +209,7 @@
     });
 
     document.getElementById('btnFiltrar').addEventListener('click', () => {
-      const filtrados = filtrarPorData(dadosCSV);
+      const filtrados = filtrarDados(dadosCSV);
       renderTotaisGerais(filtrados);
       renderResumoPorCategoria(filtrados);
       renderTable(filtrados);
@@ -316,7 +325,7 @@
         select.addEventListener('change', () => {
           categoriaStorage[historico.toLowerCase()] = select.value;
           localStorage.setItem('categoriasPersonalizadas', JSON.stringify(categoriaStorage));
-          const filtrados = filtrarPorData(dadosCSV);
+          const filtrados = filtrarDados(dadosCSV);
           renderResumoPorCategoria(filtrados);
           renderTotaisGerais(filtrados);
         });
