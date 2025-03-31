@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Leitor de CSV</title>
+  <title>Leitor de CSV Inteligente</title>
   <style>
     body {
       font-family: sans-serif;
@@ -54,7 +54,7 @@
     table {
       border-collapse: collapse;
       margin-top: 10px;
-      width: auto;
+      width: 100%;
     }
 
     th, td {
@@ -75,10 +75,22 @@
     td.valor, th.valor, td.saldo, th.saldo {
       text-align: right;
     }
+
+    select {
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .sugestao-categoria {
+      font-size: 0.8em;
+      color: #666;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
-  <h1>Leitor de CSV</h1>
+  <h1>Leitor de CSV Inteligente</h1>
   <input type="file" id="csvFile" accept=".csv" />
 
   <!-- Filtros -->
@@ -126,24 +138,153 @@
       'cartão': 'Financeiras',
     };
 
+    // Sistema de aprendizado de máquina
+    const CLASSIFICADOR_CATEGORIAS = {
+      modelo: null,
+      vocabulario: new Set(),
+      categorias: [...CATEGORIAS_BASE],
+      dadosTreinamento: JSON.parse(localStorage.getItem('mlTrainingData') || '[]')
+    };
+
     const categoriaStorage = JSON.parse(localStorage.getItem('categoriasPersonalizadas') || '{}');
     let dadosCSV = [];
 
-    function detectarCategoria(historico) {
+    // Carregar modelo salvo ao iniciar
+    if (localStorage.getItem('mlModel')) {
+      const modeloSalvo = JSON.parse(localStorage.getItem('mlModel'));
+      CLASSIFICADOR_CATEGORIAS.vocabulario = new Set(modeloSalvo.vocabulario);
+      CLASSIFICADOR_CATEGORIAS.modelo = modeloSalvo.modelo;
+    }
+
+    function treinarModelo() {
+      // Extrair features (palavras mais comuns)
+      const frequenciaPalavras = {};
+      CLASSIFICADOR_CATEGORIAS.dadosTreinamento.forEach(item => {
+        const palavras = item.historico.toLowerCase().split(/\s+/);
+        palavras.forEach(palavra => {
+          if (palavra.length > 3) { // Ignorar palavras muito curtas
+            frequenciaPalavras[palavra] = (frequenciaPalavras[palavra] || 0) + 1;
+          }
+        });
+      });
+
+      // Manter apenas as palavras mais frequentes (top 100)
+      const palavrasFrequentes = Object.entries(frequenciaPalavras)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 100)
+        .map(([palavra]) => palavra);
+
+      CLASSIFICADOR_CATEGORIAS.vocabulario = new Set(palavrasFrequentes);
+
+      // Implementar um classificador Naive Bayes simplificado
+      CLASSIFICADOR_CATEGORIAS.modelo = {
+        probabilidades: {},
+        contagemCategorias: {}
+      };
+
+      // Inicializar contagens
+      CLASSIFICADOR_CATEGORIAS.categorias.forEach(categoria => {
+        CLASSIFICADOR_CATEGORIAS.modelo.contagemCategorias[categoria] = 0;
+        CLASSIFICADOR_CATEGORIAS.modelo.probabilidades[categoria] = {};
+        CLASSIFICADOR_CATEGORIAS.vocabulario.forEach(palavra => {
+          CLASSIFICADOR_CATEGORIAS.modelo.probabilidades[categoria][palavra] = 1; // Suavização de Laplace
+        });
+      });
+
+      // Contar ocorrências
+      CLASSIFICADOR_CATEGORIAS.dadosTreinamento.forEach(item => {
+        const categoria = item.categoria;
+        CLASSIFICADOR_CATEGORIAS.modelo.contagemCategorias[categoria]++;
+        
+        const palavras = item.historico.toLowerCase().split(/\s+/);
+        palavras.forEach(palavra => {
+          if (CLASSIFICADOR_CATEGORIAS.vocabulario.has(palavra)) {
+            CLASSIFICADOR_CATEGORIAS.modelo.probabilidades[categoria][palavra]++;
+          }
+        });
+      });
+
+      // Salvar modelo treinado
+      localStorage.setItem('mlModel', JSON.stringify({
+        vocabulario: [...CLASSIFICADOR_CATEGORIAS.vocabulario],
+        modelo: CLASSIFICADOR_CATEGORIAS.modelo
+      }));
+    }
+
+    function preverCategoria(historico) {
+      if (!CLASSIFICADOR_CATEGORIAS.modelo || CLASSIFICADOR_CATEGORIAS.dadosTreinamento.length < 10) {
+        return { categoria: detectarCategoriaBasica(historico), confianca: 0 };
+      }
+
+      const palavras = historico.toLowerCase().split(/\s+/);
+      const scores = {};
+
+      // Calcular scores para cada categoria
+      CLASSIFICADOR_CATEGORIAS.categorias.forEach(categoria => {
+        let score = Math.log(CLASSIFICADOR_CATEGORIAS.modelo.contagemCategorias[categoria] / 
+                           CLASSIFICADOR_CATEGORIAS.dadosTreinamento.length);
+        
+        palavras.forEach(palavra => {
+          if (CLASSIFICADOR_CATEGORIAS.vocabulario.has(palavra)) {
+            const totalPalavrasCategoria = Object.values(CLASSIFICADOR_CATEGORIAS.modelo.probabilidades[categoria])
+                                              .reduce((a, b) => a + b, 0);
+            score += Math.log(
+              CLASSIFICADOR_CATEGORIAS.modelo.probabilidades[categoria][palavra] / 
+              totalPalavrasCategoria
+            );
+          }
+        });
+
+        scores[categoria] = score;
+      });
+
+      // Normalizar scores para obter confiança (0-1)
+      const scoresArray = Object.values(scores);
+      const maxScore = Math.max(...scoresArray);
+      const minScore = Math.min(...scoresArray);
+      const diff = maxScore - minScore;
+
+      Object.keys(scores).forEach(categoria => {
+        scores[categoria] = diff > 0 ? (scores[categoria] - minScore) / diff : 0.5;
+      });
+
+      // Ordenar por score
+      const categoriasOrdenadas = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+      
+      return {
+        categoria: categoriasOrdenadas[0][0],
+        confianca: categoriasOrdenadas[0][1],
+        alternativas: categoriasOrdenadas.slice(1, 3).map(([cat, conf]) => ({ categoria: cat, confianca: conf }))
+      };
+    }
+
+    function detectarCategoriaBasica(historico) {
       const texto = historico.toLowerCase();
       if (categoriaStorage[texto]) return categoriaStorage[texto];
+      
       for (const chave in CATEGORIAS_PALAVRAS) {
         if (texto.includes(chave)) {
           return CATEGORIAS_PALAVRAS[chave];
         }
       }
+      
       return 'Outros';
     }
 
-    function detectarTipo(valor) {
-      if (valor > 0) return 'Receita';
-      if (valor < 0) return 'Despesa';
-      return '';
+    function detectarCategoria(historico) {
+      // Primeiro verificar mapeamentos manuais
+      const texto = historico.toLowerCase();
+      if (categoriaStorage[texto]) return categoriaStorage[texto];
+      
+      for (const chave in CATEGORIAS_PALAVRAS) {
+        if (texto.includes(chave)) {
+          return CATEGORIAS_PALAVRAS[chave];
+        }
+      }
+      
+      // Usar modelo ML como fallback
+      const predicao = preverCategoria(historico);
+      return predicao.categoria;
     }
 
     function parseValor(valorStr) {
@@ -196,7 +337,7 @@
         const decoder = new TextDecoder('windows-1252');
         const text = decoder.decode(new Uint8Array(binaryStr.split('').map(c => c.charCodeAt(0))));
         const rows = text.trim().split('\n').map(row =>
-          row.split(',').map(cell => cell.replace(/^"|"$/g, ''))
+          row.split(';').map(cell => cell.replace(/^"|"$/g, '').trim())
         );
 
         dadosCSV = rows;
@@ -261,95 +402,148 @@
       }
     }
 
+    function detectarTipo(valor) {
+      if (valor > 0) return 'Receita';
+      if (valor < 0) return 'Despesa';
+      return '';
+    }
+
     function renderTable(data) {
       const container = document.getElementById('tableContainer');
+      container.innerHTML = '';
+      
+      if (data.length === 0) return;
+
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const tbody = document.createElement('tbody');
 
+      // Criar cabeçalho
       const headerRow = document.createElement('tr');
-      data[0].forEach(cell => {
+      
+      // Adicionar colunas originais
+      data[0].forEach((coluna, index) => {
         const th = document.createElement('th');
-        th.textContent = cell;
-        if (cell.toLowerCase() === 'valor') th.classList.add('valor');
+        th.textContent = coluna;
+        if (coluna.toLowerCase() === 'valor') th.classList.add('valor');
         headerRow.appendChild(th);
+        
+        // Inserir coluna Categoria após Histórico
+        if (coluna.toLowerCase().includes('histórico')) {
+          const thCategoria = document.createElement('th');
+          thCategoria.textContent = 'Categoria';
+          headerRow.appendChild(thCategoria);
+        }
       });
 
-      ['Tipo', 'Categoria', 'Saldo'].forEach(label => {
-        const th = document.createElement('th');
-        th.textContent = label;
-        if (label === 'Saldo') th.classList.add('saldo');
-        headerRow.appendChild(th);
-      });
+      // Adicionar colunas extras
+      const thTipo = document.createElement('th');
+      thTipo.textContent = 'Tipo';
+      headerRow.appendChild(thTipo);
+
+      const thSaldo = document.createElement('th');
+      thSaldo.textContent = 'Saldo';
+      thSaldo.classList.add('saldo');
+      headerRow.appendChild(thSaldo);
 
       thead.appendChild(headerRow);
+      table.appendChild(thead);
 
+      // Processar linhas de dados
       let saldo = parseValor(data[1][5]);
 
       data.slice(1).forEach((row, index, arr) => {
         const isFirst = index === 0;
         const isLast = index === arr.length - 1;
-
         const tr = document.createElement('tr');
-        row.forEach((cell, i) => {
+
+        const valor = parseValor(row[5]);
+        const historico = row[2] || '';
+        const tipo = detectarTipo(valor);
+        const predicao = preverCategoria(historico);
+        const categoriaDetectada = detectarCategoria(historico);
+
+        // Adicionar colunas originais
+        row.forEach((cell, colIndex) => {
           const td = document.createElement('td');
-          if (data[0][i].toLowerCase() === 'valor') {
+          
+          if (data[0][colIndex].toLowerCase() === 'valor') {
             const numero = parseValor(cell);
             td.textContent = formatarValorBrasileiro(numero);
             td.classList.add('valor');
           } else {
             td.textContent = cell;
           }
+          
           tr.appendChild(td);
+
+          // Inserir coluna Categoria após Histórico
+          if (data[0][colIndex].toLowerCase().includes('histórico')) {
+            const tdCategoria = document.createElement('td');
+            const select = document.createElement('select');
+            
+            [...CATEGORIAS_BASE, 'Outros'].forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat;
+              option.textContent = cat;
+              if (cat === categoriaDetectada) option.selected = true;
+              select.appendChild(option);
+            });
+
+            select.addEventListener('change', () => {
+              const novaCategoria = select.value;
+              categoriaStorage[historico.toLowerCase()] = novaCategoria;
+              localStorage.setItem('categoriasPersonalizadas', JSON.stringify(categoriaStorage));
+              
+              // Adicionar ao conjunto de treinamento
+              CLASSIFICADOR_CATEGORIAS.dadosTreinamento.push({
+                historico: historico.toLowerCase(),
+                categoria: novaCategoria
+              });
+              localStorage.setItem('mlTrainingData', JSON.stringify(CLASSIFICADOR_CATEGORIAS.dadosTreinamento));
+              
+              // Retreinar o modelo periodicamente
+              if (CLASSIFICADOR_CATEGORIAS.dadosTreinamento.length % 10 === 0) {
+                treinarModelo();
+              }
+              
+              const filtrados = filtrarDados(dadosCSV);
+              renderResumoPorCategoria(filtrados);
+              renderTotaisGerais(filtrados);
+            });
+
+            tdCategoria.appendChild(select);
+            
+            // Mostrar sugestão do ML se disponível
+            if (CLASSIFICADOR_CATEGORIAS.dadosTreinamento.length >= 10) {
+              const sugestao = document.createElement('div');
+              sugestao.className = 'sugestao-categoria';
+              sugestao.textContent = `Sugestão: ${predicao.categoria} (${Math.round(predicao.confianca * 100)}% confiança)`;
+              tdCategoria.appendChild(sugestao);
+            }
+            
+            tr.appendChild(tdCategoria);
+          }
         });
 
-        const valor = parseValor(row[5]);
-        const historico = row[2] || '';
-        const tipo = detectarTipo(valor);
-        const categoriaDetectada = detectarCategoria(historico);
+        // Adicionar coluna Tipo
+        const tdTipo = document.createElement('td');
+        tdTipo.textContent = tipo;
+        tr.appendChild(tdTipo);
 
-        const tipoTd = document.createElement('td');
-        tipoTd.textContent = tipo;
-        tr.appendChild(tipoTd);
-
-        const categoriaTd = document.createElement('td');
-        const select = document.createElement('select');
-        [...CATEGORIAS_BASE, 'Outros'].forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          if (cat === categoriaDetectada) option.selected = true;
-          select.appendChild(option);
-        });
-
-        select.addEventListener('change', () => {
-          categoriaStorage[historico.toLowerCase()] = select.value;
-          localStorage.setItem('categoriasPersonalizadas', JSON.stringify(categoriaStorage));
-          const filtrados = filtrarDados(dadosCSV);
-          renderResumoPorCategoria(filtrados);
-          renderTotaisGerais(filtrados);
-        });
-
-        categoriaTd.appendChild(select);
-        tr.appendChild(categoriaTd);
-
+        // Adicionar coluna Saldo
         const tdSaldo = document.createElement('td');
         tdSaldo.classList.add('saldo');
-
         if (!isFirst && !isLast) {
           saldo += valor;
           tdSaldo.textContent = formatarValorBrasileiro(saldo);
-        } else {
-          tdSaldo.textContent = '';
         }
-
         tr.appendChild(tdSaldo);
+
         tbody.appendChild(tr);
       });
 
-      table.appendChild(thead);
       table.appendChild(tbody);
-      container.innerHTML = '';
       container.appendChild(table);
     }
   </script>
